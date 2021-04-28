@@ -19,11 +19,11 @@ def readCameraImage(Camera01):
         currentImage = Camera01.getCurrentImage()
 #         print('in here')
         if isinstance(currentImage, np.ndarray):
-            print(CNTRL.getIMUReading())
-            print(CNTRL.getDistance())
-            #print("Got Image")
-            #cv2.imshow("Frame", CURRENTIMAGE)
-            
+            #Camera01.recognizeFace()
+            #print(CNTRL.getIMUReading())
+            #print(CNTRL.getDistance())
+            print("Got Image")
+            #cv2.imshow("Frame", CURRENTIMAGE)    
             
 
 def startCompetetion():
@@ -31,7 +31,7 @@ def startCompetetion():
         if EMAIL.checkStartEmail() == True:
             
             Camera01 = CMRA.Camera()
-            cameraThread = Thread(target = Camera01.startCamera, args = Camera01)
+            cameraThread = Thread(target = Camera01.startCamera, args = (Camera01,))
             #cameraThread.daemon = True
             cameraThread.start()
             
@@ -43,8 +43,6 @@ def startCompetetion():
             DistanceThread.daemon = True
             DistanceThread.start()
             
-            #MapThread = 
-            
             readImageThread = Thread(target = readCameraImage)
             readImageThread.daemon = True
             readImageThread.start()
@@ -54,8 +52,8 @@ def startCompetetion():
                     sys.exit()
                     break
 
-    except:
-        print("Failed to start the Competetion.")
+    except Exception as e: print(e)
+            #print("Failed to start the Competetion.")
 
 
 
