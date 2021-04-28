@@ -75,5 +75,6 @@ def startPlotting():
 		plt.xlabel('X Position (cm)')
 		plt.ylabel('Y Position (cm)')
 		plt.title("Robot Trajectory")
-		plt.savefig('map.png')
-		plt.show()
+		plt.savefig('TrajectoryMap.png')
+		print('[INFO] Map generated sucessfully!')
+		#plt.show()
