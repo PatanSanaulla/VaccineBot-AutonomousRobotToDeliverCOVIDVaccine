@@ -4,10 +4,78 @@ import RPi.GPIO as gpio
 import os
 import math
 import serial
-import emailIntegration as EMAIL
+#import emailIntegration as EMAIL
 
 #Indentify serial communication
-ser = serial.Serial('/dev/ttyUSB0', 9600)
+#ser = serial.Serial('/dev/ttyUSB0', 9600)
+IMU_XVALUE = 0.00
+DISTANCE = 0.00
+
+def IMUReading():
+    global IMU_XVALUE
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+    
+    count = 0
+
+    while True:
+        if (ser.in_waiting > 0):
+            count += 1        
+            #Read serial stream
+            line = ser.readline()        
+            #Avoid first n-lines of serial information
+            if count>5:            
+                #Strip serial stream of extra characters
+                line = line.rstrip().lstrip()            
+                line = str(line)
+                line = line.strip("'")
+                line = line.strip("b'")
+                IMU_XVALUE = float(line)
+
+
+def getIMUReading():
+    global IMU_XVALUE
+    return IMU_XVALUE
+
+
+def distanceReading():
+    global DISTANCE
+    trig = 16
+    echo = 18
+    
+    while True:
+        gpio.setmode(gpio.BOARD)
+        gpio.setup(trig, gpio.OUT)
+        gpio.setup(echo, gpio.IN)
+    
+        #Ensure outout has no value
+        gpio.output(trig, False)
+        time.sleep(0.01)
+
+        #Generate Trigger pulse
+        gpio.output(trig, True)
+        time.sleep(0.00001)
+        gpio.output(trig, False)
+
+        #Generate Echo time signal
+        while gpio.input(echo) == 0:
+            pulse_start = time.time()
+
+        while gpio.input(echo) == 1:
+            pulse_end = time.time()
+
+        pulse_duration = pulse_end - pulse_start
+
+        #Convert time to distance
+        distance = pulse_duration*17150
+        DISTANCE = round(distance, 2)
+        
+        #clear the output pins
+        gpio.cleanup()
+        
+
+def getDistance():
+    global DISTANCE
+    return DISTANCE
 
 forwardCount = 0
 ##### INit the pins
