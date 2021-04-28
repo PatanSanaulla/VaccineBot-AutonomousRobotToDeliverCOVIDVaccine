@@ -80,10 +80,11 @@ def checkStartEmail():
             result, data = mail.fetch(latest_email_id, "(RFC822)")
             
             if data is None:
-                print("Waiting ...")
+                print("Checking for mail...")
                 
             if data is not None:
                 print("Process Initiated!")
+
                 
         except IndexError:
             time.sleep(2)
@@ -91,5 +92,5 @@ def checkStartEmail():
                 count = count + 1
                 continue
             else:
-                print("Process Stopped!")
+                print("Email not received!")
                 count = 60
