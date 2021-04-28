@@ -1,11 +1,16 @@
 import cv2
 import numpy as np
 import imutils
+import time
 from datetime import datetime
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 
-CURRENTIMAGE
+IMAGE = None
+
+def getCurrentImage():
+    global IMAGE
+    return IMAGE
 
 def detectOBI(image):
     global forwardCount
@@ -65,7 +70,7 @@ def detectOBI(image):
 
 
 def startCamera():
-    global CURRENTIMAGE
+    global IMAGE
     # initialize the Raspberry Pi camera
     camera = PiCamera()
     camera.resolution = (640, 480)
@@ -83,25 +88,23 @@ def startCamera():
     # keep looping
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=False):
         # grab the current frame
-        start = datetime.datetime.now()
         
         image = frame.array
-        image = cv2.rotate(image, cv2.ROTATE_180)
+        IMAGE = cv2.rotate(image, cv2.ROTATE_180)
         
         #processedImage = detectOBI(image)
-        CURRENTIMAGE = image
-        out.write(processedImage)
+        #CURRENTIMAGE = image
+        out.write(IMAGE)
         
         # show the frame to our screen
-        cv2.imshow("Frame", processedImage)
+        cv2.imshow("Frame", IMAGE)
            
         key = cv2.waitKey(1) & 0xFF
         # clear the stream in preparation for the next frame
         rawCapture.truncate(0)
         # press the 'q' key to stop the video stream
         if key == ord("q"):
-            gameover()
             break
         
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
