@@ -5,6 +5,7 @@ from datetime import datetime
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 
+CURRENTIMAGE
 
 def detectOBI(image):
     global forwardCount
@@ -64,6 +65,7 @@ def detectOBI(image):
 
 
 def startCamera():
+    global CURRENTIMAGE
     # initialize the Raspberry Pi camera
     camera = PiCamera()
     camera.resolution = (640, 480)
@@ -86,7 +88,8 @@ def startCamera():
         image = frame.array
         image = cv2.rotate(image, cv2.ROTATE_180)
         
-        processedImage = detectOBI(image)
+        #processedImage = detectOBI(image)
+        CURRENTIMAGE = image
         out.write(processedImage)
         
         # show the frame to our screen
