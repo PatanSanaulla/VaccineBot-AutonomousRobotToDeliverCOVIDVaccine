@@ -69,9 +69,9 @@ def checkStartEmail():
             #search for an unread email form user's email address
             result, data = mail.search(None, '(UNSEEN FROM "spatan07@terpmail.umd.edu")') 
             #result, data = mail.search(None, '(UNSEEN FROM "ENPM809TS19@gmail.com")') #initiatorEmail
-            
-            print(result)
-            print(len(data))
+            print("Checking for mail...")
+            #print(result)
+            #print(len(data))
             
             ids = data[0] #data is the list of the emails
             id_list = ids.split()
@@ -84,6 +84,7 @@ def checkStartEmail():
                 
             if data is not None:
                 print("Process Initiated!")
+                return True
 
                 
         except IndexError:
@@ -93,4 +94,5 @@ def checkStartEmail():
                 continue
             else:
                 print("Email not received!")
+                return False
                 count = 60
