@@ -11,10 +11,7 @@ class Camera:
     def __init__(self):
         self.image = None
         self.frame = None
-        # define the codec and create VideoWriter object
-        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('trackblockandretrive.avi', self.fourcc, 10, (640, 480))
-        # write frame to video file
+        
 
     def getCurrentImage(self):
         return self.image
@@ -86,6 +83,10 @@ class Camera:
         # allow the camera to warmup
         time.sleep(0.1)
 
+        # define the codec and create VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter('trackblockandretrive.avi', fourcc, 10, (640, 480))
+
         # keep looping
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=False):
             # grab the current frame
@@ -95,10 +96,10 @@ class Camera:
             
             #processedImage = detectOBI(image)
             #CURRENTIMAGE = image
-            #out.write(self.image)
+            out.write(self.image)
             
             # show the frame to our screen
-            #cv2.imshow("Frame", self.image)
+            cv2.imshow("Frame", self.image)
                
             #key = cv2.waitKey(1) & 0xFF
             # clear the stream in preparation for the next frame
@@ -161,3 +162,6 @@ class Camera:
             #    break
 
             #cv2.destroyAllWindows()
+
+    def detectQRCode():
+        #To be defined
