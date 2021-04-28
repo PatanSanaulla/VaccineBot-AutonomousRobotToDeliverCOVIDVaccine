@@ -47,7 +47,7 @@ def sendEmail(picName):
     s.sendmail(fromAdd, toAdd, msg.as_string())
     s.quit()
     
-    print('Email Sent!')
+    print('[INFO] Email Sent!')
     
     # Define time stamp & record an image
     #pic_time = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -69,7 +69,7 @@ def checkStartEmail():
             #search for an unread email form user's email address
             result, data = mail.search(None, '(UNSEEN FROM "spatan07@terpmail.umd.edu")') 
             #result, data = mail.search(None, '(UNSEEN FROM "ENPM809TS19@gmail.com")') #initiatorEmail
-            print("Checking for mail...")
+            print("[INFO] Checking for mail...")
             #print(result)
             #print(len(data))
             
@@ -80,10 +80,10 @@ def checkStartEmail():
             result, data = mail.fetch(latest_email_id, "(RFC822)")
             
             if data is None:
-                print("Checking for mail...")
+                print("[INFO] Checking for mail...")
                 
             if data is not None:
-                print("Process Initiated!")
+                print("[INFO] Process Initiated!")
                 return True
 
                 
@@ -93,6 +93,6 @@ def checkStartEmail():
                 count = count + 1
                 continue
             else:
-                print("Email not received!")
+                print("[INFO] Email not received!")
                 return False
                 count = 60
