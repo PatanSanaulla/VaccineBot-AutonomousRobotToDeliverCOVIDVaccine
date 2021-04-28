@@ -4,6 +4,7 @@
 import emailUtility as EMAIL 
 import controlUtility as CNTRL 
 import cameraUtility as CMRA
+import mappingUtility as MAP 
 import cv2
 import time
 from threading import Thread
@@ -12,12 +13,12 @@ import sys
 
 
 
-def readCameraImage():    
+def readCameraImage(Camera01):    
     while True:
         time.sleep(0.1)
-        CURRENTIMAGE = CMRA.getCurrentImage()
+        currentImage = Camera01.getCurrentImage()
 #         print('in here')
-        if isinstance(CURRENTIMAGE, np.ndarray):
+        if isinstance(currentImage, np.ndarray):
             print(CNTRL.getIMUReading())
             print(CNTRL.getDistance())
             #print("Got Image")
@@ -29,7 +30,8 @@ def startCompetetion():
     try:
         if EMAIL.checkStartEmail() == True:
             
-            cameraThread = Thread(target = CMRA.startCamera)
+            Camera01 = CMRA.Camera()
+            cameraThread = Thread(target = Camera01.startCamera, args = Camera01)
             #cameraThread.daemon = True
             cameraThread.start()
             
