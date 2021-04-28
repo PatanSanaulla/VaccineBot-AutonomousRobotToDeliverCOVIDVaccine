@@ -10,6 +10,11 @@ class Camera:
 
     def __init__(self):
         self.image = None
+        self.frame = None
+        # define the codec and create VideoWriter object
+        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('trackblockandretrive.avi', self.fourcc, 10, (640, 480))
+        # write frame to video file
 
     def getCurrentImage(self):
         return self.image
@@ -71,7 +76,7 @@ class Camera:
         return image
 
 
-    def startCamera(self):
+    def startCamera(self, _):
         # initialize the Raspberry Pi camera
         camera = PiCamera()
         camera.resolution = (640, 480)
@@ -81,31 +86,78 @@ class Camera:
         # allow the camera to warmup
         time.sleep(0.1)
 
-        # define the codec and create VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('trackblockandretrive.avi', fourcc, 10, (640, 480))
-        # write frame to video file
-
         # keep looping
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=False):
             # grab the current frame
-            
+            self.frame = frame
             image = frame.array
             self.image = cv2.rotate(image, cv2.ROTATE_180)
             
             #processedImage = detectOBI(image)
             #CURRENTIMAGE = image
-            out.write(self.image)
+            #out.write(self.image)
             
             # show the frame to our screen
-            cv2.imshow("Frame", self.image)
+            #cv2.imshow("Frame", self.image)
                
-            key = cv2.waitKey(1) & 0xFF
+            #key = cv2.waitKey(1) & 0xFF
             # clear the stream in preparation for the next frame
-            rawCapture.truncate(0)
+            #rawCapture.truncate(0)
             # press the 'q' key to stop the video stream
-            if key == ord("q"):
-                break
+            #if key == ord("q"):
+            #    break
             
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        
+    def recognizeFace(self):
+        time.sleep(2.0)
+        # loop over the frames from the video stream
+        #while True:
+        # grab the frame from the threaded video stream and resize it
+        # to have a maximum width of 400 pixels
+        frame = self.frame
+        frame = imutils.resize(frame, width=400)
+ 
+        # grab the frame dimensions and convert it to a blob
+        (h, w) = frame.shape[:2]
+        blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
+            (300, 300), (104.0, 177.0, 123.0))
+ 
+        # pass the blob through the network and obtain the detections and predictions
+        net.setInput(blob)
+        detections = net.forward()
+
+        # loop over the detections
+        for i in range(0, detections.shape[2]):
+            # extract the confidence (i.e., probability) associated with the prediction
+            confidence = detections[0, 0, i, 2]
+
+            # filter out weak detections by ensuring the `confidence` is
+            # greater than the minimum confidence
+            if confidence < 0.5:
+                continue
+
+            # compute the (x, y)-coordinates of the bounding box for the object
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+ 
+            # draw the bounding box of the face along with the associated probability
+            text = "{:.2f}%".format(confidence * 100)
+            y = startY - 10 if startY - 10 > 10 else startY + 10
+            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+            cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+
+            # show the output frame
+            #self.out.write(frame)
+            
+            # show the frame to our screen
+            cv2.imshow("Frame", frame)
+            #cv2.imshow("Frame", cv2.flip(frame,-1))
+            #key = cv2.waitKey(1) & 0xFF
+ 
+            # if the `q` key was pressed, break from the loop
+            #if key == ord("q"):
+            #    break
+
+            #cv2.destroyAllWindows()
