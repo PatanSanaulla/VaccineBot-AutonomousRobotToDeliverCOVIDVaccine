@@ -12,27 +12,32 @@ import numpy as np
 import sys
 
 #Global Variables
-VACCINESTRANSPORTED = 0
-VACCINEGRIPPED = False
-VACCINEDELIVERED = False
-VACCINETYPE = ''
+Camera01 = None
+Controls01 = None
+
+def Competetion():
+    global Camera01, Controls01
+    vaccinesTransported = 0
+    vaccineGripped = False
+    VACCINEDELIVERED = False
+    vaccineType = ''
+    
+    while vaccinesTransported != 3:
+        if not isinstance(Camera01.getCurrentImage(), np.ndarray):
+            continue
+        if vaccineGripped == False:
+            vaccineType = Camera01.detectQRCode()
+            EMAIL.sendEmail('QRCodeImage')
+            print('[INFO] Request for '+ vaccineType + ' vail!')
+            while True:
+                vaccineGripped = True
+
+        if vaccineGripped == True and VACCINEDELIVERED == False:
+            #code to move ahead
+            print("Reached Here!")
 
 
-def Competetion(Camera01, Controls01, _):
-	global VACCINESTRANSPORTED
-
-    while VACCINESTRANSPORTED != 3:
-
-    	if VACCINEGRIPPED == False:
-    		VACCINETYPE = Camera01.detectQRCode()
-    		VACCINEGRIPPED = True
-
-    	if VACCINEGRIPPED == True and VACCINEDELIVERED == False:
-    		#code to move ahead
-    		print("Reached Here!")
-
-
-    		#currentImage = Camera01.getCurrentImage()
+            #currentImage = Camera01.getCurrentImage()
         #print()
 #         print('in here')
         #if isinstance(currentImage, np.ndarray):
@@ -44,6 +49,7 @@ def Competetion(Camera01, Controls01, _):
             
 
 def startCompetetion():
+    global Camera01, Controls01
     try:
         if EMAIL.checkStartEmail() == True:
             
@@ -61,8 +67,8 @@ def startCompetetion():
             DistanceThread.daemon = True
             DistanceThread.start()
             
-            Competetion = Thread(target = Competetion, args = (Camera01, Controls01, ))
-            Competetion.start()
+            DeliverVaccines = Thread(target = Competetion)
+            DeliverVaccines.start()
 
 
 
