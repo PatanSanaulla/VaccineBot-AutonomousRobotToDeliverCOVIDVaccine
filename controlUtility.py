@@ -51,7 +51,7 @@ class Controls:
         trig = 16
         echo = 18
         
-        while isUltraEnabled:
+        while self.isUltraEnabled:
 
             count = 0
             distance = 0.0
