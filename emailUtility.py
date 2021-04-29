@@ -17,7 +17,8 @@ initiatorEmail = 'ENPM809TS19@gmail.com'
 def sendEmail(picName):
     
     # Destination email information
-    toAdd = ['spatan07@terpmail.umd.edu', initiatorEmail, 'skotasai@umd.edu']
+    #toAdd = ['spatan07@terpmail.umd.edu', initiatorEmail, 'skotasai@umd.edu']
+    toAdd = ['spatan07@terpmail.umd.edu']
     fromAdd = smtpUser
     subject = 'Assignment output: Image recorded of '+ picName
     msg = MIMEMultipart()
