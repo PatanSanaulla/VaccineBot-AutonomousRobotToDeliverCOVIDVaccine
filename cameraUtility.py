@@ -6,6 +6,13 @@ from datetime import datetime
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 
+#globals
+GREEN_THRESHOLD = ((65, 60, 30), (85, 255, 255)) #Green
+RED_THRESHOLD = ((150, 70, 50), (180, 255, 255)) #Red
+BLUE_THRESHOLD = ((150, 90, 50), (180, 255, 255)) #TO BE FIXED
+
+THRESHOLDS = {"PFIZER":GREEN_THRESHOLD, "MODERNA":RED_THRESHOLD, "J&J": BLUE_THRESHOLD}
+
 class Camera:
 
     def __init__(self):
@@ -16,18 +23,17 @@ class Camera:
     def getCurrentImage(self):
         return self.image
 
-    def detectOBI(image):
-        global forwardCount
-        height = (image.shape[0])
-        width = (image.shape[1])
+    def detectVaccine(self, vaccineName):
+        global THRESHOLDS
+                
+        #global forwardCount
+#         height = (image.shape[0])
+#         width = (image.shape[1])
         
         #getting the HSV
         hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-                         
-        #threshold = cv2.inRange(hsvImage, (65, 60, 30), (85, 255, 255)) #Green
-        threshold = cv2.inRange(hsvImage, (150, 70, 50), (180, 255, 255)) #Red
-        
-        contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        thres = cv2.inRange(hsvImage, THRESHOLDS[vaccineName][0], THRESHOLDS[vaccineName][1])
+        contours, hierarchy = cv2.findContours(thres, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         #print(contours)
         
         centerX = int(640/2)
@@ -75,33 +81,41 @@ class Camera:
 
     def startCamera(self, _):
         # initialize the Raspberry Pi camera
-        camera = PiCamera()
-        camera.resolution = (640, 480)
-        camera.framerate = 25
-        rawCapture = PiRGBArray(camera, size=(640,480))
-
+        #camera = PiCamera()
+        #camera.resolution = (640, 480)
+        #camera.framerate = 25
+        #rawCapture = PiRGBArray(camera, size=(640,480))
+        cap = cv2.VideoCapture(0)
         # allow the camera to warmup
         time.sleep(0.1)
 
         # define the codec and create VideoWriter object
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('trackblockandretrive.avi', fourcc, 10, (640, 480))
+        out = cv2.VideoWriter('CompleteCompetition.avi', fourcc, 10, (640, 480))
 
         # keep looping
-        for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=False):
-            # grab the current frame
-            self.frame = frame
-            image = frame.array
-            self.image = cv2.rotate(image, cv2.ROTATE_180)
+        #for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=False):
+        while(cap.isOpened()):
             
-            #processedImage = detectOBI(image)
-            #CURRENTIMAGE = image
-            out.write(self.image)
+            ret, frame = cap.read()
+            if ret == True:
+                
+                image = cv2.rotate(frame, cv2.ROTATE_180)
+                self.image = image
+                
+                #processedImage = detectOBI(image)
+                #CURRENTIMAGE = image
+                out.write(image)
             
-            # show the frame to our screen
-            cv2.imshow("Frame", self.image)
+                # show the frame to our screen
+                cv2.imshow("Frame", image)
                
-            #key = cv2.waitKey(1) & 0xFF
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord("q"):
+                    break
+        cap.release()
+        out.release()
+        cv2.destroyAllWindows()
             # clear the stream in preparation for the next frame
             #rawCapture.truncate(0)
             # press the 'q' key to stop the video stream
@@ -117,7 +131,7 @@ class Camera:
         #while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 400 pixels
-        frame = self.frame
+        frame = self.image
         frame = imutils.resize(frame, width=400)
  
         # grab the frame dimensions and convert it to a blob
@@ -153,7 +167,7 @@ class Camera:
             #self.out.write(frame)
             
             # show the frame to our screen
-            cv2.imshow("Frame", frame)
+            #cv2.imshow("Frame", frame)
             #cv2.imshow("Frame", cv2.flip(frame,-1))
             #key = cv2.waitKey(1) & 0xFF
  
@@ -163,5 +177,23 @@ class Camera:
 
             #cv2.destroyAllWindows()
 
-    def detectQRCode():
-        #To be defined
+    def detectQRCode(self):
+        #define detector
+        detector = cv2.QRCodeDetector()
+
+        while True:
+            #check, img = cap.read() #check is a bool
+            print('[INFO] Looking for QR Code...')
+            img = self.getCurrentImage()
+            data, bbox, _ = detector.detectAndDecode(img)
+            if(bbox is not None):
+                for i in range(len(bbox)):
+                    cv2.line(img, tuple(bbox[i][0]), tuple(bbox[(i+1) % len(bbox)][0]), color = (0,0,255), thickness = 4)
+                    cv2.putText(img, data, (int(bbox[0][0][0]), int(bbox[0][0][1])-10),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    cv2.imwrite("QRCodeImage.jpg", img)
+            if data:
+                return data
+                break
+
+            #show result to screen
+            #cv2.imshow("QR Code detector",img)
