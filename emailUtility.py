@@ -61,7 +61,7 @@ def checkStartEmail():
     mail.list();
     
     count = 0
-    
+    print("[INFO] Checking for mail...")
     while count < 60:
         try:
             #connect to inbox
@@ -70,7 +70,6 @@ def checkStartEmail():
             #search for an unread email form user's email address
             #result, data = mail.search(None, '(UNSEEN FROM "spatan07@terpmail.umd.edu")') 
             result, data = mail.search(None, '(UNSEEN FROM "ENPM809TS19@gmail.com")') #initiatorEmail
-            print("[INFO] Checking for mail...")
             #print(result)
             #print(len(data))
             
