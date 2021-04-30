@@ -1,8 +1,6 @@
 import time
-import datetime
 import RPi.GPIO as gpio
-import os
-import math
+import numpy as np
 import serial
 
 
@@ -38,7 +36,7 @@ class Controls:
                 #Read serial stream
                 line = ser.readline()        
                 #Avoid first n-lines of serial information
-                if count>5:            
+                if count>10:            
                     #Strip serial stream of extra characters
                     line = line.rstrip().lstrip()            
                     line = str(line)
@@ -87,11 +85,46 @@ class Controls:
 
             self.distance = round((distance/3), 2) #taking average distance
             
+    def locateVaccine(self, X, Y, radius):
+        degrees = 0
+        centerX = int(640/2)
+        centerY = int(480/2)
+        print('x value'+str(X))
+        
+        if(X > 300 and X < 350):
+            if radius*2 > 400: #the object is close to the gripper
+                print('[INFO] Closing gripper...')
+                self.closeGripper()
+                #
+                    #pic_time = 'pickedObject'#datetime.now().strftime('%Y%m%d%H%M%S')
+                    #cv2.imwrite(pic_time+'.jpg', image)
+                    #EMAIL.sendEmail(pic_time)
+                    #reverse(forwardCount)
+                    #forwardCount = 0
+                return True
+            else:
+                print('[INFO] Moving forward...')
+                self.forward(3)
+                #forwardCount += 5
+                #   openGripper()
+                #return image #within the zone
+        else:
+            if(X < centerX):
+                #rotate left
+                degrees = (320 - X)*0.061
+                print('[INFO] Moving left...')
+                self.pivotleft(degrees)
+            else:
+                #rotate right
+                degrees = (640 - X)*0.061
+                print('[INFO] Moving right...')
+                self.pivotright(degrees)
             
+        return False
             
     #forwardCount = 0
     ##### INit the pins
-    def setupPins():
+    def setupPins(self):
         gpio.setmode(gpio.BOARD)
         gpio.setup(31, gpio.OUT)
         gpio.setup(33, gpio.OUT)
@@ -99,17 +132,17 @@ class Controls:
         gpio.setup(37, gpio.OUT)
         gpio.setup(36, gpio.OUT)
         gpio.output(36, False)
-        #gpio.setup(7, gpio.IN, pull_up_down = gpio.PUD_UP)
-        #gpio.setup(12, gpio.IN, pull_up_down = gpio.PUD_UP)
+        gpio.setup(7, gpio.IN, pull_up_down = gpio.PUD_UP)
+        gpio.setup(12, gpio.IN, pull_up_down = gpio.PUD_UP)
         
-    def clearPins():
+    def clearPins(self):
         gpio.output(31, False)
         gpio.output(33, False)
         gpio.output(35, False)
         gpio.output(37, False)
-        gpio.cleanup()
+        #gpio.cleanup()
         
-    def closeGripper():
+    def closeGripper(self):
         gpio.setmode(gpio.BOARD)
         gpio.setup(36, gpio.OUT)  #Gripper
         
@@ -129,7 +162,7 @@ class Controls:
         gpio.output(36, False)
         gpio.cleanup()
 
-    def openGripper():
+    def openGripper(self):
         gpio.setmode(gpio.BOARD)
         gpio.setup(36, gpio.OUT)  #Gripper
         
@@ -151,7 +184,7 @@ class Controls:
         
 
     def forward(self, maxTicks):
-        setupPins()
+        self.setupPins()
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -185,12 +218,12 @@ class Controls:
             if counterFL >= maxTicks and counterBR >= maxTicks:
                 pwm1.stop()
                 pwm2.stop()
-                clearPins()
-                self.file.write(str(self.imuValue)+','+str(maxTicks/98)+'\n')
+                self.clearPins()
+                self.file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
                 break
             
     def reverse(self, maxTicks):
-        setupPins()
+        self.setupPins()
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -224,14 +257,14 @@ class Controls:
             if counterFL >= maxTicks and counterBR >= maxTicks:
                 pwm1.stop()
                 pwm2.stop()
-                clearPins()
-                self.file.write(str(self.imuValue)+','+str(maxTicks/98)+'\n')
+                self.clearPins()
+                self.file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
                 break
 
         
-    def pivotright(angle):
-        setupPins()
-        offset = 1 #degrees
+    def pivotright(self, angle):
+        self.setupPins()
+        offset = 2 #degrees
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -245,26 +278,12 @@ class Controls:
         pwm1.start(val)
         pwm2.start(val)
         time.sleep(0.1)
-        
-        # if ser.in_waiting > 0:
-        #     line = ser.readline() #print(line)
-        #     line = line.rstrip().lstrip()
-        #     line = str(line)
-        #     line = line.strip("'")
-        #     line = line.strip("b'")
 
-        goalAngle = (self.imuValue + angle)%360
+        goalAngle = (self.getIMUReading() + angle)%360
 
 
-        while True:
-            #Read serial stream
-            # line = ser.readline() #print(line)
-            # line = line.rstrip().lstrip()
-            # line = str(line)
-            # line = line.strip("'")
-            # line = line.strip("b'")
-            currAngle = self.imuValue#float(line)
-           
+        while (self.getIMUReading()+offset <= goalAngle and self.getIMUReading()-offset >= goalAngle):
+            
             if int(gpio.input(12)) != int(buttonBR):
                 buttonBR = int(gpio.input(12))
                 counterBR += 1
@@ -273,16 +292,15 @@ class Controls:
                 buttonFL = int(gpio.input(7))
                 counterFL += 1
 
-            if currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
-                pwm1.stop()
-                pwm2.stop()
-                clearPins()
-                break
+        #currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
+        pwm1.stop()
+        pwm2.stop()
+        self.clearPins()
 
 
-    def pivotleft(angle):
-        setupPins()
-        offset = 1 #degrees
+    def pivotleft(self, angle):
+        self.setupPins()
+        offset = 2 #degrees
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -297,22 +315,9 @@ class Controls:
         pwm2.start(val)
         time.sleep(0.1)
         
-        # if ser.in_waiting > 0:
-        #     line = ser.readline() 
-        #     line = line.rstrip().lstrip()
-        #     line = str(line)
-        #     line = line.strip("'")
-        #     line = line.strip("b'")
-        #     goalAngle = (float(line) - angle)%360
-        goalAngle = (self.imuValue + angle)%360
+        goalAngle = (self.getIMUReading() + angle)%360
 
-        while True:
-            # line = ser.readline() 
-            # line = line.rstrip().lstrip()
-            # line = str(line)
-            # line = line.strip("'")
-            # line = line.strip("b'")
-            currAngle = self.imuValue #float(line)
+        while (self.getIMUReading()+offset <= goalAngle and self.getIMUReading()-offset >= goalAngle):
             
             if int(gpio.input(12)) != int(buttonBR):
                 buttonBR = int(gpio.input(12))
@@ -322,8 +327,8 @@ class Controls:
                 buttonFL = int(gpio.input(7))
                 counterFL += 1
 
-            if currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
-                pwm1.stop()
-                pwm2.stop()
-                clearPins()
-                break
+        #if currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
+        pwm1.stop()
+        pwm2.stop()
+        self.clearPins()
+        #break
