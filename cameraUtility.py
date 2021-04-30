@@ -25,58 +25,43 @@ class Camera:
 
     def detectVaccine(self, vaccineName):
         global THRESHOLDS
-                
+        
+        X = 0
+        Y = 0
+        radius = 0.0
         #global forwardCount
 #         height = (image.shape[0])
 #         width = (image.shape[1])
         
         #getting the HSV
-        hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hsvImage = cv2.cvtColor(self.getCurrentImage(), cv2.COLOR_BGR2HSV)
         thres = cv2.inRange(hsvImage, THRESHOLDS[vaccineName][0], THRESHOLDS[vaccineName][1])
         contours, hierarchy = cv2.findContours(thres, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         #print(contours)
         
-        centerX = int(640/2)
-        centerY = int(480/2)
+        #centerX = int(640/2)
+        #centerY = int(480/2)
         
         #to print the center of the frame
-        image = cv2.line(image, (centerX-20,centerY), (centerX+20,centerY), (0, 0, 0), 2)
-        image = cv2.line(image, (centerX,centerY-20), (centerX,centerY+20), (0, 0, 0), 2)
+        #image = cv2.line(image, (centerX-20,centerY), (centerX+20,centerY), (0, 0, 0), 2)
+        #image = cv2.line(image, (centerX,centerY-20), (centerX,centerY+20), (0, 0, 0), 2)
         
         if len(contours) == 0:
-            print('No block found')
+            return (False, X, Y, radius)
         else:
             c = max(contours, key=cv2.contourArea)
             ((X,Y), radius) = cv2.minEnclosingCircle(c)
-            image = cv2.circle(image, (int(X),int(Y)), int(radius), (0, 0, 255), 2)
-            image = cv2.circle(image, (int(X),int(Y)), 2, (0, 0, 255), 2)
+            print('can see the object')
+            return (True, X, Y, radius)
+        
+            #image = cv2.circle(image, (int(X),int(Y)), int(radius), (0, 0, 255), 2)
+            #image = cv2.circle(image, (int(X),int(Y)), 2, (0, 0, 255), 2)
+            #cv2.putText(image, '('+str(X)+','+str(Y)+')', (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
             
-            cv2.putText(image, '('+str(X)+','+str(Y)+')', (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
-            degrees = 0
-            if(X > 315 and X < 325):
-                if radius*2 > 400: #the object is close to the gripper
-                    closeGripper() #
-                    pic_time = 'pickedObject'#datetime.now().strftime('%Y%m%d%H%M%S')
-                    cv2.imwrite(pic_time+'.jpg', image)
-                    EMAIL.sendEmail(pic_time)
-                    reverse(forwardCount)
-                    forwardCount = 0
-                else:
-                    forward(5)
-                    forwardCount += 5
-                 #   openGripper()
-                return image #within the zone
             
-            if(X < centerX):
-                #rotate left
-                degrees = (320 - X)*0.061
-                pivotleft(degrees)
-            else:
-                #rotate right
-                degrees = (640 - X)*0.061
-                pivotright(degrees)
+            
                 
-        return image
+        #return image
 
 
     def startCamera(self, _):
