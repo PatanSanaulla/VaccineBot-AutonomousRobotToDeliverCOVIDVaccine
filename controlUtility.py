@@ -8,7 +8,7 @@ class Controls:
 
     def __init__(self):
         self.isIMUEnabled = True
-        self.isUltraEnabled = True
+        self.isUltraEnabled = False
         self.imuValue = 0.00
         self.distance = 0.00
         self.file = open("map_info.txt",'a')
