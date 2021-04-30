@@ -41,9 +41,20 @@ def Competetion():
                         print("[INFO] Can't Find the Vial!")
                         Controls01.pivotleft(15)
                 
+                if vaccineGripped:
+                    cv2.imwrite("VaccineGripped.jpg",Camera01.getCurrentImage())
+                    EMAIL.sendEmail('VaccineGripped')
+                
                 while vaccineGripped == True and vaccineDelivered == False:
                     #code to move ahead
-                    print("Reached Here!")
+                    personFound = Camera01.recognizeFace()
+                    if personFound:
+                        Controls01.openGripper()
+                        EMAIL.sendEmail('FaceRecognitionImage')
+                        vaccineDelivered = True
+                        print("[INFO] Vaccine Delivered!")
+                
+                vaccinesTransported += 1
                 
         except Exception as e:
             print(e)
