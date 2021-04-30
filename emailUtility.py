@@ -68,8 +68,8 @@ def checkStartEmail():
             mail.select("inbox")
             
             #search for an unread email form user's email address
-            result, data = mail.search(None, '(UNSEEN FROM "spatan07@terpmail.umd.edu")') 
-            #result, data = mail.search(None, '(UNSEEN FROM "ENPM809TS19@gmail.com")') #initiatorEmail
+            #result, data = mail.search(None, '(UNSEEN FROM "spatan07@terpmail.umd.edu")') 
+            result, data = mail.search(None, '(UNSEEN FROM "ENPM809TS19@gmail.com")') #initiatorEmail
             print("[INFO] Checking for mail...")
             #print(result)
             #print(len(data))
