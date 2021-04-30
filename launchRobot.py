@@ -19,24 +19,35 @@ def Competetion():
     global Camera01, Controls01
     vaccinesTransported = 0
     vaccineGripped = False
-    VACCINEDELIVERED = False
+    vaccineDelivered = False
     vaccineType = ''
     
     while vaccinesTransported != 3:
         if not isinstance(Camera01.getCurrentImage(), np.ndarray):
             continue
-        if vaccineGripped == False:
-            vaccineType = Camera01.detectQRCode()
-            EMAIL.sendEmail('QRCodeImage')
-            print('[INFO] Request for '+ vaccineType + ' vail!')
-            while True:
-                vaccineGripped = True
-
-        if vaccineGripped == True and VACCINEDELIVERED == False:
-            #code to move ahead
-            print("Reached Here!")
-
-
+        
+        try:
+            if vaccineGripped == False:
+                vaccineType = Camera01.detectQRCode()
+                EMAIL.sendEmail('QRCodeImage')
+                print('[INFO] Request for '+ vaccineType + ' vial!')
+            
+                while not vaccineGripped:
+                    (isVisible, X, Y, radius) = Camera01.detectVaccine(vaccineType)
+                    print(isVisible)
+                    if isVisible:
+                        vaccineGripped = Controls01.locateVaccine(X, Y, radius)
+                    else:
+                        print("[INFO] Can't Find the Vial!")
+                        Controls01.pivotleft(15)
+                
+                while vaccineGripped == True and vaccineDelivered == False:
+                    #code to move ahead
+                    print("Reached Here!")
+                
+        except Exception as e:
+            print(e)
+            sys.exit()
             #currentImage = Camera01.getCurrentImage()
         #print()
 #         print('in here')
