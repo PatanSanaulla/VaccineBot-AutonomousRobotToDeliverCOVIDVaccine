@@ -20,7 +20,7 @@ def sendEmail(picName):
     #toAdd = ['spatan07@terpmail.umd.edu', initiatorEmail, 'skotasai@umd.edu']
     toAdd = ['spatan07@terpmail.umd.edu']
     fromAdd = smtpUser
-    subject = 'Assignment output: Image recorded of '+ picName
+    subject = 'Grand Challenge Output: Image of '+ picName
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = fromAdd
@@ -29,7 +29,7 @@ def sendEmail(picName):
     msg.preamble = "Image recorded of "+picName
     
     #Email Text
-    body = MIMEText("Image recorded of "+ picName)
+    body = MIMEText("Please find the attached image of "+ picName+".")
     msg.attach(body)
 
     #Attach image
