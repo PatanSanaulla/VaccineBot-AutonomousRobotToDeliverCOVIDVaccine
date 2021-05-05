@@ -8,16 +8,57 @@ class Controls:
 
     def __init__(self):
         self.isIMUEnabled = True
-        self.isUltraEnabled = False
+        self.isUltraEnabled = True
+        self.startOrientation = -1
         self.imuValue = 0.00
         self.distance = 0.00
-        self.file = open("map_info.txt",'a')
+        #self.file = open("map_info.txt",'a')
 
     def getIMUReading(self):
         return self.imuValue
 
     def getDistance(self):
-        return self.distance
+        trig = 16
+        echo = 18
+        try:
+            if self.isUltraEnabled:
+                count = 0
+                distance = 0.0
+                
+                while count < 3:
+                    gpio.setmode(gpio.BOARD)
+                    gpio.setup(trig, gpio.OUT)
+                    gpio.setup(echo, gpio.IN)             
+                        
+                    #Ensure outout has no value
+                    gpio.output(trig, False)
+                    time.sleep(0.01)
+
+                    #Generate Trigger pulse
+                    gpio.output(trig, True)
+                    time.sleep(0.00001)
+                    gpio.output(trig, False)
+
+ 
+                    while gpio.input(echo) == 0: #and lapseCounter <= 20:
+                        pulse_start = time.time()
+                        
+                    while gpio.input(echo) == 1:
+                        pulse_end = time.time()
+
+                    #clear the output pins
+                    gpio.cleanup()
+                    pulse_duration = pulse_end - pulse_start
+
+                    #Convert time to distance
+                    distance = distance + pulse_duration*17150
+                    count = count + 1
+
+                distance = round((distance/3), 2) #taking average distance
+                return(distance)
+         
+        except Exception as e:
+            print(e)
 
     def enableDisableIMU(self, status):
         self.isIMUEnabled = status
@@ -29,101 +70,102 @@ class Controls:
         ser = serial.Serial('/dev/ttyUSB0', 9600)
         
         count = 0
-
-        while self.isIMUEnabled:
-            if (ser.in_waiting > 0):
-                count += 1        
-                #Read serial stream
-                line = ser.readline()        
-                #Avoid first n-lines of serial information
-                if count>10:            
-                    #Strip serial stream of extra characters
-                    line = line.rstrip().lstrip()            
-                    line = str(line)
-                    line = line.strip("'")
-                    line = line.strip("b'")
-                    self.imuValue = float(line)
-
+        try:
+            
+            while True:
+                if self.isIMUEnabled:
+                    if (ser.in_waiting > 0):
+                        count += 1        
+                        #Read serial stream
+                        line = ser.readline()        
+                        #Avoid first n-lines of serial information
+                        if count>10:            
+                            #Strip serial stream of extra characters
+                            line = line.rstrip().lstrip()            
+                            line = str(line)
+                            line = line.strip("'")
+                            line = line.strip("b'")
+                            self.imuValue = float(line)
+                            if self.startOrientation == -1:
+                                self.startOrientation = float(line)
+        except ValueError as e:
+            self.IMUReading(_)
 
     def distanceReading(self, _):
         trig = 16
         echo = 18
-        
-        while self.isUltraEnabled:
+        try:
+            while True:
+                if self.isUltraEnabled:
+                    
+                    count = 0
+                    distance = 0.0
 
-            count = 0
-            distance = 0.0
+                    while count < 3:
+                        gpio.setmode(gpio.BOARD)
+                        gpio.setup(trig, gpio.OUT)
+                        gpio.setup(echo, gpio.IN)
+                    
+                        #Ensure outout has no value
+                        gpio.output(trig, False)
+                        time.sleep(0.01)
 
-            while count < 3:
-                gpio.setmode(gpio.BOARD)
-                gpio.setup(trig, gpio.OUT)
-                gpio.setup(echo, gpio.IN)
-            
-                #Ensure outout has no value
-                gpio.output(trig, False)
-                time.sleep(0.01)
+                        #Generate Trigger pulse
+                        gpio.output(trig, True)
+                        time.sleep(0.00001)
+                        gpio.output(trig, False)
 
-                #Generate Trigger pulse
-                gpio.output(trig, True)
-                time.sleep(0.00001)
-                gpio.output(trig, False)
+                        #Generate Echo time signal
+                        #lapseCounter = 0 #to reset if it takes too long
+                        #print(self.isUltraEnabled)
+                        while gpio.input(echo) == 0: #and lapseCounter <= 20:
+                            pulse_start = time.time()
+                        
+                        #if lapseCounter > 20:
+                         #   gpio.cleanup()
+                          #  continue
+                        #print('here')
+                        while gpio.input(echo) == 1:
+                            pulse_end = time.time()
 
-                #Generate Echo time signal
-                while gpio.input(echo) == 0:
-                    pulse_start = time.time()
+                        #clear the output pins
+                        gpio.cleanup()
+                        pulse_duration = pulse_end - pulse_start
 
-                while gpio.input(echo) == 1:
-                    pulse_end = time.time()
+                        #Convert time to distance
+                        distance = distance + pulse_duration*17150
+                        count = count + 1
 
-                #clear the output pins
-                gpio.cleanup()
-                pulse_duration = pulse_end - pulse_start
-
-                #Convert time to distance
-                distance = distance + pulse_duration*17150
-                count = count + 1
-
-            self.distance = round((distance/3), 2) #taking average distance
+                    self.distance = round((distance/3), 2) #taking average distance
+                    #print(self.distance)
+         
+        except Exception as e:
+            self.distanceReading(_)
             
     def locateVaccine(self, X, Y, radius):
         degrees = 0
         centerX = int(640/2)
         centerY = int(480/2)
-        print('x value'+str(X))
         
-        if(X > 300 and X < 350):
+        if(X > 290 and X < 350):
             if radius*2 > 400: #the object is close to the gripper
-                print('[INFO] Closing gripper...')
                 self.closeGripper()
-                #
-                    #pic_time = 'pickedObject'#datetime.now().strftime('%Y%m%d%H%M%S')
-                    #cv2.imwrite(pic_time+'.jpg', image)
-                    #EMAIL.sendEmail(pic_time)
-                    #reverse(forwardCount)
-                    #forwardCount = 0
                 return True
             else:
-                print('[INFO] Moving forward...')
                 self.forward(3)
-                #forwardCount += 5
-                #   openGripper()
-                #return image #within the zone
         else:
             if(X < centerX):
                 #rotate left
                 degrees = (320 - X)*0.061
-                print('[INFO] Moving left...')
                 self.pivotleft(degrees)
             else:
                 #rotate right
                 degrees = (640 - X)*0.061
-                print('[INFO] Moving right...')
                 self.pivotright(degrees)
             
         return False
             
-    #forwardCount = 0
-    ##### INit the pins
+            
     def setupPins(self):
         gpio.setmode(gpio.BOARD)
         gpio.setup(31, gpio.OUT)
@@ -143,6 +185,7 @@ class Controls:
         #gpio.cleanup()
         
     def closeGripper(self):
+        print('[INFO] Closing gripper...')
         gpio.setmode(gpio.BOARD)
         gpio.setup(36, gpio.OUT)  #Gripper
         
@@ -160,9 +203,10 @@ class Controls:
         pwm.stop()
         #clear the output pins
         gpio.output(36, False)
-        gpio.cleanup()
+        #gpio.cleanup()
 
     def openGripper(self):
+        print('[INFO] Opening gripper...')
         gpio.setmode(gpio.BOARD)
         gpio.setup(36, gpio.OUT)  #Gripper
         
@@ -180,11 +224,13 @@ class Controls:
         pwm.stop()
         #clear the output pins
         gpio.output(36, False)
-        gpio.cleanup()
+        #gpio.cleanup()
         
 
     def forward(self, maxTicks):
+        print('[INFO] Moving forward...')
         self.setupPins()
+        file = open('map_info.txt','a')
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -219,11 +265,14 @@ class Controls:
                 pwm1.stop()
                 pwm2.stop()
                 self.clearPins()
-                self.file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
+                file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
+                file.close()
                 break
             
     def reverse(self, maxTicks):
+        print('[INFO] Moving backward...')
         self.setupPins()
+        file = open('map_info.txt','a')
         counterBR = np.uint64(0)
         counterFL = np.uint64(0)
 
@@ -258,11 +307,13 @@ class Controls:
                 pwm1.stop()
                 pwm2.stop()
                 self.clearPins()
-                self.file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
+                file.write(str((self.getIMUReading()-180)%360)+','+str(maxTicks/98)+'\n')
+                file.close()
                 break
 
         
     def pivotright(self, angle):
+        print('[INFO] Turning right...')
         self.setupPins()
         offset = 2 #degrees
         counterBR = np.uint64(0)
@@ -274,7 +325,7 @@ class Controls:
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(31, 50) #Right side
         pwm2 = gpio.PWM(35, 50) #Left side
-        val = 35
+        val = 55
         pwm1.start(val)
         pwm2.start(val)
         time.sleep(0.1)
@@ -299,6 +350,7 @@ class Controls:
 
 
     def pivotleft(self, angle):
+        print('[INFO] Turning left...')
         self.setupPins()
         offset = 2 #degrees
         counterBR = np.uint64(0)
@@ -310,7 +362,7 @@ class Controls:
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(33, 50) #Right side
         pwm2 = gpio.PWM(37, 50) #Left side
-        val = 35
+        val = 55
         pwm1.start(val)
         pwm2.start(val)
         time.sleep(0.1)
@@ -332,3 +384,56 @@ class Controls:
         pwm2.stop()
         self.clearPins()
         #break
+        
+    def orientLeft(self, angle):
+        print('[INFO] Orient left...')
+        self.setupPins()
+        offset = 0.5 #degrees
+
+        goalAngle = (self.getIMUReading() + angle)%360
+        # Initialize pwm signal to control motor
+        pwm1 = gpio.PWM(33, 50) #Right side
+        pwm2 = gpio.PWM(37, 50) #Left side
+        val = 55
+        
+        while True:
+            pwm1.start(val)
+            pwm2.start(val)
+            
+            time.sleep(0.01)
+            
+            pwm1.stop()
+            pwm2.stop()
+            
+            if (self.getIMUReading()+offset >= goalAngle and self.getIMUReading()-offset <= goalAngle):
+                self.clearPins()
+                break
+            else:
+                continue
+            
+            
+    def orientRight(self, angle):
+        print('[INFO] Orient right...')
+        self.setupPins()
+        offset = 0.5 #degrees
+
+        goalAngle = (self.getIMUReading() + angle)%360
+        # Initialize pwm signal to control motor
+        pwm1 = gpio.PWM(31, 50) #Right side
+        pwm2 = gpio.PWM(35, 50) #Left side
+        val = 55
+        
+        while True:
+            pwm1.start(val)
+            pwm2.start(val)
+            
+            time.sleep(0.1)
+            
+            pwm1.stop()
+            pwm2.stop()
+            
+            if (self.getIMUReading()+offset >= goalAngle and self.getIMUReading()-offset <= goalAngle):
+                self.clearPins()
+                break
+            else:
+                continue
