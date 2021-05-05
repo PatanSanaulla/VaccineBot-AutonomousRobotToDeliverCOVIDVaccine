@@ -34,7 +34,7 @@ def Competetion():
             
                 while not vaccineGripped:
                     (isVisible, X, Y, radius) = Camera01.detectVaccine(vaccineType)
-                    print(isVisible)
+                    #print(isVisible)
                     if isVisible:
                         vaccineGripped = Controls01.locateVaccine(X, Y, radius)
                     else:
@@ -44,6 +44,18 @@ def Competetion():
                 if vaccineGripped:
                     cv2.imwrite("VaccineGripped.jpg",Camera01.getCurrentImage())
                     EMAIL.sendEmail('VaccineGripped')
+                    Controls01.reverse(10)
+                    time.sleep(3)
+                    Controls01.orientRight(180)
+                    time.sleep(3)
+                    arrowFound = False
+                    while not arrowFound:
+                        print('[INFO] Looking for Arrow!')
+                        (arrowFound, arrowDirection)= Camera01.detectArrow()
+                        Controls01.orientRight(15)
+                    EMAIL.sendEmail('ArrowImage')
+                    print(arrowDirection)
+                    
                 
                 while vaccineGripped == True and vaccineDelivered == False:
                     #code to move ahead
@@ -53,27 +65,21 @@ def Competetion():
                         EMAIL.sendEmail('FaceRecognitionImage')
                         vaccineDelivered = True
                         print("[INFO] Vaccine Delivered!")
-                
+                        
+                MAP.startPlotting() 
+                #EMAIL.sendEmail('TrajectoryMap')
                 vaccinesTransported += 1
                 
         except Exception as e:
             print(e)
             sys.exit()
-            #currentImage = Camera01.getCurrentImage()
-        #print()
-#         print('in here')
-        #if isinstance(currentImage, np.ndarray):
-            #Camera01.recognizeFace()
-            #print(CNTRL.getIMUReading())
-            #print(CNTRL.getDistance())
-            #print("Got Image")
-            #cv2.imshow("Frame", CURRENTIMAGE)    
             
 
 def startCompetetion():
     global Camera01, Controls01
     try:
-        if EMAIL.checkStartEmail() == True:
+        #if EMAIL.checkStartEmail() == True:
+        if True:
             
             Camera01 = CMRA.Camera()
             cameraThread = Thread(target = Camera01.startCamera, args = (Camera01,))
@@ -91,8 +97,6 @@ def startCompetetion():
             
             DeliverVaccines = Thread(target = Competetion)
             DeliverVaccines.start()
-
-
 
                 
     except Exception as e: print(e)
