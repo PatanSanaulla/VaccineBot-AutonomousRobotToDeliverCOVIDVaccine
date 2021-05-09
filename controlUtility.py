@@ -9,13 +9,20 @@ class Controls:
     def __init__(self):
         self.isIMUEnabled = True
         self.isUltraEnabled = True
+        self.gripperClose = False
         self.startOrientation = -1
         self.imuValue = 0.00
         self.distance = 0.00
         #self.file = open("map_info.txt",'a')
+        
+    def getStartOrientation(self):
+        return self.startOrientation
 
     def getIMUReading(self):
         return self.imuValue
+    
+    def getDistanceReading(self):
+        return self.distance
 
     def getDistance(self):
         trig = 16
@@ -114,17 +121,12 @@ class Controls:
                         gpio.output(trig, True)
                         time.sleep(0.00001)
                         gpio.output(trig, False)
-
+                        pulse_start = time.time()
                         #Generate Echo time signal
-                        #lapseCounter = 0 #to reset if it takes too long
-                        #print(self.isUltraEnabled)
-                        while gpio.input(echo) == 0: #and lapseCounter <= 20:
+
+                        while gpio.input(echo) == 0: 
                             pulse_start = time.time()
                         
-                        #if lapseCounter > 20:
-                         #   gpio.cleanup()
-                          #  continue
-                        #print('here')
                         while gpio.input(echo) == 1:
                             pulse_end = time.time()
 
@@ -149,10 +151,9 @@ class Controls:
         
         if(X > 290 and X < 350):
             if radius*2 > 400: #the object is close to the gripper
-                self.closeGripper()
                 return True
             else:
-                self.forward(3)
+                self.forward(3, False)
         else:
             if(X < centerX):
                 #rotate left
@@ -172,8 +173,8 @@ class Controls:
         gpio.setup(33, gpio.OUT)
         gpio.setup(35, gpio.OUT)
         gpio.setup(37, gpio.OUT)
-        gpio.setup(36, gpio.OUT)
-        gpio.output(36, False)
+        #gpio.setup(36, gpio.OUT)
+        #gpio.output(36, False)
         gpio.setup(7, gpio.IN, pull_up_down = gpio.PUD_UP)
         gpio.setup(12, gpio.IN, pull_up_down = gpio.PUD_UP)
         
@@ -182,10 +183,13 @@ class Controls:
         gpio.output(33, False)
         gpio.output(35, False)
         gpio.output(37, False)
+        #gpio.setup(36, gpio.OUT)
+        #gpio.output(36, False)
         #gpio.cleanup()
         
-    def closeGripper(self):
+    def controlGripper(self, _):
         print('[INFO] Closing gripper...')
+        self.gripperClose = True
         gpio.setmode(gpio.BOARD)
         gpio.setup(36, gpio.OUT)  #Gripper
         
@@ -194,40 +198,53 @@ class Controls:
         
         rate = 0.15
         duty = float(3.5)
-        while True:
+        while self.gripperClose:
             duty += rate
             pwm.ChangeDutyCycle(duty)
             time.sleep(0.2)
-            if duty >= 6.5:#6.25:
-                break
+            if duty >= 6.0:#6.25:
+                rate = 0.0
+                
+        print('[INFO] Opening gripper...')        
+        if not self.gripperClose:        
+            rate = 0.15
+            duty = float(6)
+            while True:
+                pwm.ChangeDutyCycle(duty)
+                duty -= rate        
+                time.sleep(0.2)
+                if duty <= 3.5:
+                    break
+        
         pwm.stop()
         #clear the output pins
+        #self.gripperClose = True
         gpio.output(36, False)
         #gpio.cleanup()
 
     def openGripper(self):
-        print('[INFO] Opening gripper...')
-        gpio.setmode(gpio.BOARD)
-        gpio.setup(36, gpio.OUT)  #Gripper
-        
-        pwm = gpio.PWM(36, 50)
-        pwm.start(5)
-        
-        rate = 0.15
-        duty = float(6)
-        while True:
-            pwm.ChangeDutyCycle(duty)
-            duty -= rate        
-            time.sleep(0.2)
-            if duty <= 3.5:
-                break
-        pwm.stop()
+        self.gripperClose = False
+#         gpio.setmode(gpio.BOARD)
+#         gpio.setup(36, gpio.OUT)  #Gripper
+#         
+#         pwm = gpio.PWM(36, 50)
+#         pwm.start(5)
+#         
+#         rate = 0.15
+#         duty = float(6)
+#         while True:
+#             pwm.ChangeDutyCycle(duty)
+#             duty -= rate        
+#             time.sleep(0.2)
+#             if duty <= 3.5:
+#                 break
+#         pwm.stop()
         #clear the output pins
-        gpio.output(36, False)
+#         gpio.output(36, False)
         #gpio.cleanup()
         
 
-    def forward(self, maxTicks):
+    def forward(self, maxTicks, obstacleAvoidance):
         print('[INFO] Moving forward...')
         self.setupPins()
         file = open('map_info.txt','a')
@@ -245,8 +262,18 @@ class Controls:
         pwm2.start(val)
         time.sleep(0.1)
 
-
-        while True:      
+        obstacleAvoidance = False
+        while True:
+            if obstacleAvoidance == True and self.getDistanceReading() <= 20:
+                print('[INFO] Obstacle Ahead ...')
+                pwm1.stop()
+                pwm2.stop()
+                self.clearPins()
+                time.sleep(2)
+                file.write(str(self.getIMUReading())+','+str(maxTicks/98)+'\n')
+                file.close()
+                self.forward(maxTicks-counterBR, obstacleAvoidance)
+                
             if int(gpio.input(12)) != int(buttonBR):
                 buttonBR = int(gpio.input(12))
                 counterBR += 1
@@ -325,7 +352,7 @@ class Controls:
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(31, 50) #Right side
         pwm2 = gpio.PWM(35, 50) #Left side
-        val = 55
+        val = 35
         pwm1.start(val)
         pwm2.start(val)
         time.sleep(0.1)
@@ -362,7 +389,7 @@ class Controls:
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(33, 50) #Right side
         pwm2 = gpio.PWM(37, 50) #Left side
-        val = 55
+        val = 35
         pwm1.start(val)
         pwm2.start(val)
         time.sleep(0.1)
@@ -388,52 +415,122 @@ class Controls:
     def orientLeft(self, angle):
         print('[INFO] Orient left...')
         self.setupPins()
-        offset = 0.5 #degrees
+        offset = 1 #degrees
 
-        goalAngle = (self.getIMUReading() + angle)%360
+        goalAngle = (angle - self.getStartOrientation())%360
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(33, 50) #Right side
         pwm2 = gpio.PWM(37, 50) #Left side
-        val = 55
+        val = 35
+        pwm1.start(val)
+        pwm2.start(val)
+        time.sleep(0.1)
         
         while True:
-            pwm1.start(val)
-            pwm2.start(val)
-            
-            time.sleep(0.01)
-            
-            pwm1.stop()
-            pwm2.stop()
-            
-            if (self.getIMUReading()+offset >= goalAngle and self.getIMUReading()-offset <= goalAngle):
+            CurrentAngle = self.getIMUReading()
+            if (CurrentAngle+offset >= goalAngle and CurrentAngle-offset <= goalAngle):
+                pwm1.stop()
+                pwm2.stop()
                 self.clearPins()
                 break
-            else:
-                continue
+            #print(CurrentAngle)
+            
             
             
     def orientRight(self, angle):
         print('[INFO] Orient right...')
         self.setupPins()
-        offset = 0.5 #degrees
+        offset = 1 #degrees
 
-        goalAngle = (self.getIMUReading() + angle)%360
+        goalAngle = (angle - self.getStartOrientation())%360
         # Initialize pwm signal to control motor
         pwm1 = gpio.PWM(31, 50) #Right side
         pwm2 = gpio.PWM(35, 50) #Left side
-        val = 55
+        val = 35
         
-        while True:
-            pwm1.start(val)
-            pwm2.start(val)
-            
-            time.sleep(0.1)
-            
-            pwm1.stop()
-            pwm2.stop()
-            
-            if (self.getIMUReading()+offset >= goalAngle and self.getIMUReading()-offset <= goalAngle):
+        pwm1.start(val)
+        pwm2.start(val)
+        time.sleep(0.1)
+        
+        while True:            
+            CurrentAngle = self.getIMUReading()
+            if (CurrentAngle+offset >= goalAngle and CurrentAngle-offset <= goalAngle):
+                pwm1.stop()
+                pwm2.stop()
                 self.clearPins()
                 break
-            else:
-                continue
+            #print(CurrentAngle)
+    
+    def orient_right(self, angle):
+        self.setupPins()
+        offset = 1 #degrees
+        counterBR = np.uint64(0)
+        counterFL = np.uint64(0)
+
+        buttonBR = int(0)
+        buttonFL = int(0)
+
+        # Initialize pwm signal to control motor
+        pwm1 = gpio.PWM(31, 50) #Right side
+        pwm2 = gpio.PWM(35, 50) #Left side
+        val = 35
+        pwm1.start(val)
+        pwm2.start(val)
+        time.sleep(0.1)
+
+        goalAngle = (angle - self.getStartOrientation())%360
+
+
+        while True:
+            currAngle = self.getIMUReading()
+            if int(gpio.input(12)) != int(buttonBR):
+                buttonBR = int(gpio.input(12))
+                counterBR += 1
+                
+            if int(gpio.input(7)) != int(buttonFL):
+                buttonFL = int(gpio.input(7))
+                counterFL += 1
+
+            if currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
+                pwm1.stop()
+                pwm2.stop()
+                self.clearPins()
+                break
+
+
+
+
+    def orient_left(self, angle):
+        self.setupPins()
+        offset = 1 #degrees
+        counterBR = np.uint64(0)
+        counterFL = np.uint64(0)
+
+        buttonBR = int(0)
+        buttonFL = int(0)
+
+        # Initialize pwm signal to control motor
+        pwm1 = gpio.PWM(33, 50) #Right side
+        pwm2 = gpio.PWM(37, 50) #Left side
+        val = 35
+        pwm1.start(val)
+        pwm2.start(val)
+        time.sleep(0.1)
+
+        goalAngle = (angle - self.getStartOrientation())%360
+
+        while True:
+            currAngle = self.getIMUReading()
+            if int(gpio.input(12)) != int(buttonBR):
+                buttonBR = int(gpio.input(12))
+                counterBR += 1
+                
+            if int(gpio.input(7)) != int(buttonFL):
+                buttonFL = int(gpio.input(7))
+                counterFL += 1
+
+            if currAngle+offset >= goalAngle and currAngle-offset <= goalAngle:
+                pwm1.stop()
+                pwm2.stop()
+                self.clearPins()
+                break
