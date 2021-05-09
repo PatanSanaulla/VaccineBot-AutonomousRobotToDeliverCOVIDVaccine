@@ -1,6 +1,6 @@
 import qrcode
 
-code = qrcode.make("")
+code = qrcode.make("RIGHT")
 
 code.save("RIGHT_QR.png")
 
