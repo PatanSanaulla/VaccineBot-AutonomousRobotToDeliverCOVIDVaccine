@@ -14,13 +14,13 @@ class Planner:
         self.RADIUS = 1  # Radius of bot 0.263 m
         self.STEP_OBJECT_LIST = []
         self.COST_MAP_DICT = {}  # Index and Cost
-        self.CLEARANCE = 15
+        self.CLEARANCE = 10
 
         #self.obstacle_map = cv.imread(mapName) # "obs_map_easy.png"
         #self.gray_map = cv.cvtColor(self.obstacle_map, cv.COLOR_BGR2GRAY)
         #x, y, _ = self.obstacle_map.shape
-        self.MAX_X = 120
-        self.MAX_Y = 360
+        self.MAX_X = 400
+        self.MAX_Y = 400
 
     def initiatePlanning(self):
         isPossible = 0
@@ -68,9 +68,12 @@ class Planner:
     def isValidStep(self, position, clearance):
         posX = position[0]
         posY = position[1]
-
-        if posY >= 160 and posY <= 200 and posX >= 40 and posX <= 80:
+        
+        if posX >= 80-clearance and posX <= 135+clearance and posY >= 75-clearance and posY <= 145+clearance:
             return False
+        
+        #if posX >= 100-clearance and posX <= 135+clearance and posY >= 75-clearance and posY <= 145+clearance:
+        #    return False
 
         else:
             return True
@@ -114,7 +117,9 @@ class Planner:
 
     def inGoal(self, position):
         x, y = position[0], position[1]
-        if ((x - self.GOAL_POINT[0]) ** 2 + (y - self.GOAL_POINT[1]) ** 2 <= (0.1) ** 2):
+        #if ((x - self.GOAL_POINT[0]) ** 2 + (y - self.GOAL_POINT[1]) ** 2 <= (0.1) ** 2):
+        #    return True
+        if x >= self.GOAL_POINT[0]-5 and x<= self.GOAL_POINT[0]+5 and y >= self.GOAL_POINT[1]-5 and y <= self.GOAL_POINT[1]+5:
             return True
         else:
             return False
