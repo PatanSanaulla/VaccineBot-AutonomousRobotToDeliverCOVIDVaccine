@@ -53,63 +53,57 @@ def Competetion():
                     #time.sleep(1)
                     Controls01.reverse(20)
                     #time.sleep(0.5)
-                    Controls01.orientRight(0)
-                    
-                    #arrowFound = False
-                    #while not arrowFound:
-                    #    print('[INFO] Looking for Arrow!')
-                    #    (arrowFound, arrowDirection)= Camera01.detectArrow()
-                    #    Controls01.orientRight(15)
-                    #EMAIL.sendEmail('ArrowImage')
-                    #print(arrowDirection)
-                    
+                    Controls01.orientRight(0)                    
                 
                 while vaccineGripped == True and vaccineDelivered == False:
                     #code to move ahead
-                    #start point([45,15])
-                    AstarPlanner = PLNR.Planner([0,50], [55, 75])
-                    steps = AstarPlanner.initiatePlanning()
-                    print(steps)
+                    Controls01.forward(45, True)
+                    Controls01.orientLeft(0)
+                    Controls01.forward(45, True)
+                    Controls01.orientLeft(345)
+                    Controls01.forward(50, True)
+                    Controls01.orientLeft(330)
+                    time.sleep(2)
                     
-                    X = 15
-                    Y = 50
-                    prevAngle = Controls01.getIMUReading()
-                    for index in range(4, len(steps), 4):
-                        X_ = steps[index][0]
-                        Y_ = steps[index][0]
+                    arrowFound = False
+                    while not arrowFound:
+                        print('[INFO] Looking for Arrow!')
+                        (arrowFound, arrowDirection)= Camera01.detectArrow()
+                    EMAIL.sendEmail('ArrowImage')
+                        #Controls01.orientRight(15)
+                    if arrowDirection == 'LEFT':
+                        Controls01.orientLeft(270)
                         
-                        try:
-                            angle = np.rad2deg(math.atan((Y-Y_)/(X-X_)))
-                        except ZeroDivisionError:
-                            angle = 90
-                        #angle = (angle)%360 # as per map
-                        print(angle)
-                        if angle != prevAngle:
-                            if angle >= 180:
-                                Controls01.orientLeft(angle)
-                            else:
-                                Controls01.orientRight(360-angle)
-                            prevAngle = angle
-                            
-                        distance = int(math.sqrt(math.pow((X-X_),2)+math.pow((Y-Y_),2)))
-                        Controls01.forward(distance, True)
-                        
-                        X = X_
-                        Y = Y_
-                        
-                    Controls01.reverse(5)
-                    #time.sleep(0.5)
-                    Controls01.orientRight(0)
-                    personFound = Camera01.recognizeFace()
-                    if personFound:
-                        Controls01.openGripper()
-                        EMAIL.sendEmail('FaceRecognitionImage')
-                        vaccineDelivered = True
-                        print("[INFO] Vaccine Delivered!")
+                    Controls01.forward(35, True)
+                    Controls01.orientLeft(270)
+                    Controls01.forward(35, True)
+                    Controls01.orientLeft(270)
+                    Controls01.forward(45, True)
+                    Controls01.orientLeft(270)
+                    Controls01.forward(35, True)
+                    Controls01.orientLeft(270)
+                    
+                    location = ''                    
+                    print('[INFO] Looking for QR!')
+                    location = Camera01.detectQRCode()
+                    EMAIL.sendEmail('QRCodeImage')
+                        #Controls01.orientRight(15)
+                    if location == 'STOP':
+                        Controls01.forward(5, True)
+                        personFound = Camera01.recognizeFace()
+                        if personFound:
+                            Controls01.openGripper()
+                            EMAIL.sendEmail('FaceRecognitionImage')
+                            vaccineDelivered = True
+                            vaccineGripped = False
+                            print("[INFO] Vaccine Delivered!")
                         
                 MAP.startPlotting() 
-                #EMAIL.sendEmail('TrajectoryMap')
-                vaccinesTransported += 1
+                EMAIL.sendEmail('TrajectoryMap')
+                
+                if vaccineDelivered:
+                    vaccinesTransported += 1
+                
                 #sys.exit()
                 
         except Exception as e:
@@ -120,8 +114,8 @@ def Competetion():
 def startCompetetion():
     global Camera01, Controls01
     try:
-        #if EMAIL.checkStartEmail() == True:
-        if True:
+        if EMAIL.checkStartEmail() == True:
+        #if True:
             
             Camera01 = CMRA.Camera()
             cameraThread = Thread(target = Camera01.startCamera, args = (Camera01,))
@@ -133,9 +127,9 @@ def startCompetetion():
             IMUThread.daemon = True
             IMUThread.start()
             
-            DistanceThread = Thread(target = Controls01.distanceReading, args = (Controls01, ))
-            DistanceThread.daemon = True
-            DistanceThread.start()
+            #DistanceThread = Thread(target = Controls01.distanceReading, args = (Controls01, ))
+            #DistanceThread.daemon = True
+            #DistanceThread.start()
             
             DeliverVaccines = Thread(target = Competetion)
             DeliverVaccines.start()
