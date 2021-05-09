@@ -18,7 +18,7 @@ def plotPath(start_pos, dist, ax):
     startx=start_pos[0]
     starty=start_pos[1]
     theta=np.deg2rad(start_pos[2])
-    print(start_pos)
+    #print(start_pos)
     # Assume ticks were counted while moving
 
     # convert ticks to distance
