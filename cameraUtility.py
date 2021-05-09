@@ -7,9 +7,9 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 
 #globals
-GREEN_THRESHOLD = ((65, 60, 30), (85, 255, 255))
+GREEN_THRESHOLD = ((50, 60, 60), (85, 255, 255))
 RED_THRESHOLD = ((150, 70, 50), (180, 255, 255))
-BLUE_THRESHOLD = ((150, 90, 50), (180, 255, 255)) #TO BE FIXED
+BLUE_THRESHOLD = ((86, 86, 16), (140, 255, 255))
 YELLOW_THRESHOLD = ((5, 40, 135), (60, 255, 255))
 
 #laundry room
@@ -162,18 +162,10 @@ class Camera:
     
         GB = cv2.GaussianBlur(thres,(5,5), cv2.BORDER_DEFAULT)
     
-        #applying Harris Corner
-        #dst = cv2.cornerHarris(GB, 2, 3, 0.04)
-        #dst = cv2.dilate(dst, None)
-        #image[dst>0.01*dst.max()] = [0, 0, 255]
-    
-        #applying Shi_tomasi method
         corners = cv2.goodFeaturesToTrack(GB, 7, 0.01, 10)
         try:
             corners = np.int0(corners)
         except:
-            #cv2.rectangle(image, (0,0), (255,50), (255, 255, 255), -1)
-            #cv2.putText(image, "Orientation: None", (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
             return (arrowFound, arrowDirection)
     
         ((cx,cy), radius) = cv2.minEnclosingCircle(corners)
@@ -181,6 +173,8 @@ class Camera:
         
         if len(corners) >= 5:
             arrowFound = True
+        else:
+            return (arrowFound, arrowDirection)
     
         x_coord = []
         y_coord = []
@@ -197,24 +191,23 @@ class Camera:
         pointsWithin = 0
         if y_diff > x_diff:
             #Can only be "up/Down"
-
+            arrowFound = False
             #to check if lies within up
-            y_diff = abs(int(cy)-min(y_coord))
-            Area_of_side = x_diff * y_diff
+            #y_diff = abs(int(cy)-min(y_coord))
+            #Area_of_side = x_diff * y_diff
         
-            for i in range(0, len(x_coord)):
-                Area_sum = (0.5)*(x_diff)*abs(y_coord[i]-int(cy)) + (0.5)*(x_diff)*abs(y_coord[i]-min(y_coord)) + (0.5)*(y_diff)*abs(x_coord[i]-min(x_coord)) + (0.5)*(y_diff)*abs(max(x_coord)-x_coord[i])
+            #for i in range(0, len(x_coord)):
+             #   Area_sum = (0.5)*(x_diff)*abs(y_coord[i]-int(cy)) + (0.5)*(x_diff)*abs(y_coord[i]-min(y_coord)) + (0.5)*(y_diff)*abs(x_coord[i]-min(x_coord)) + (0.5)*(y_diff)*abs(max(x_coord)-x_coord[i])
     
-                if Area_sum <= Area_of_side:
-                    pointsWithin = pointsWithin + 1
+               # if Area_sum <= Area_of_side:
+              #     pointsWithin = pointsWithin + 1
         
-            if pointsWithin > 3:
-                cv2.putText(image, "Orientation: UP", (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
-            else:
-                cv2.putText(image, "Orientation: DOWN", (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+            #if pointsWithin > 3:
+           #     cv2.putText(image, "Orientation: UP", (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+           # else:
+               # cv2.putText(image, "Orientation: DOWN", (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
         else:
             #Can only be "left/Right"
-        
             #to check if lies within left
             X_diff = abs(int(cx)-min(x_coord))
             Area_of_side = x_diff * y_diff
