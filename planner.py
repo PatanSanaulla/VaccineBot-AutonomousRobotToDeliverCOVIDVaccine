@@ -119,7 +119,7 @@ class Planner:
         x, y = position[0], position[1]
         #if ((x - self.GOAL_POINT[0]) ** 2 + (y - self.GOAL_POINT[1]) ** 2 <= (0.1) ** 2):
         #    return True
-        if x >= self.GOAL_POINT[0]-5 and x<= self.GOAL_POINT[0]+5 and y >= self.GOAL_POINT[1]-5 and y <= self.GOAL_POINT[1]+5:
+        if x >= self.GOAL_POINT[0]-1 and x<= self.GOAL_POINT[0]+1 and y >= self.GOAL_POINT[1]-1 and y <= self.GOAL_POINT[1]+1:
             return True
         else:
             return False

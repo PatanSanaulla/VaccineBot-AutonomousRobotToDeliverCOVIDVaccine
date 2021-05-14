@@ -23,7 +23,7 @@ def Competetion():
 #     foundVaccine = False
 #     vaccineDelivered = False
 #     vaccineType = ''
-    vaccines = ['PFIZER', 'MODERNA', 'J&J']
+    #vaccines = ['PFIZER', 'MODERNA', 'J&J']
     
     Controls01.orient_right(180)
     while vaccinesTransported != 2:
@@ -35,10 +35,10 @@ def Competetion():
         
         try:
             if foundVaccine == False:
-                #vaccineType = Camera01.detectQRCode()
-                #EMAIL.sendEmail('QRCodeImage')
-                #print('[INFO] Request for '+ vaccineType + ' vial!')
-                vaccineType = vaccines[vaccinesTransported]#'PFIZER'
+                vaccineType = Camera01.detectQRCode()
+                EMAIL.sendEmail('QRCodeImage')
+                print('[INFO] Request for '+ vaccineType + ' vial!')
+                #vaccineType = vaccines[vaccinesTransported]#'PFIZER'
             
                 while not foundVaccine:
                     (isVisible, X, Y, radius) = Camera01.detectVaccine(vaccineType)
@@ -54,13 +54,10 @@ def Competetion():
                     GripperClose.daemon = True
                     GripperClose.start()
                     time.sleep(6)
-                    #cv2.imwrite("VaccineGripped.jpg",Camera01.getCurrentImage())
-                    #EMAIL.sendEmail('VaccineGripped')
+                    cv2.imwrite("VaccineGripped.jpg",Camera01.getCurrentImage())
+                    EMAIL.sendEmail('VaccineGripped')
                     #time.sleep(1)
                     Controls01.reverse(10)
-                    #Controls01.orient_right(180)
-                    #time.sleep(0.5)
-                    #Controls01.orient_right(0)
                 
                 if vaccineDelivered == False:
                     #code to move ahead
@@ -101,22 +98,22 @@ def Competetion():
                     #Controls01.reverse(5)
                     #time.sleep(0.5)
                     Controls01.orient_right(0)
-                    #personFound = Camera01.recognizeFace()
-                    #if personFound:
-                    if True:
+                    personFound = Camera01.recognizeFace()
+                    if personFound:
+                    #if True:
                         #Controls01.forward(7, False)
                         Controls01.openGripper()
                         time.sleep(3)
-                        #EMAIL.sendEmail('FaceRecognitionImage')
+                        EMAIL.sendEmail('FaceRecognitionImage')
                         vaccineDelivered = True
                         print("[INFO] Vaccine Delivered!")
                         Controls01.reverse(15)
                         
                     if vaccineDelivered:
                         angle = 0                    
-                        #print('[INFO] Looking for QR!')
+                        print('[INFO] Looking for QR!')
                         angle = Camera01.detectQRCode()
-                        #EMAIL.sendEmail('QRCodeImage')
+                        EMAIL.sendEmail('QRCodeImage')
                         #Controls01.orientRight(15)
                         angle = 270
                         Controls01.orient_left(angle)
@@ -127,7 +124,7 @@ def Competetion():
                         while not arrowFound:
                             print('[INFO] Looking for Arrow!')
                             (arrowFound, arrowDirection)= Camera01.detectArrow()
-                            #EMAIL.sendEmail('ArrowImage')
+                            EMAIL.sendEmail('ArrowImage')
                         if arrowFound: 
                             if arrowDirection == 'LEFT':
                                 angle = (angle - 90)%360
@@ -140,7 +137,7 @@ def Competetion():
                                 
                         
                 MAP.startPlotting() 
-                #EMAIL.sendEmail('TrajectoryMap')
+                EMAIL.sendEmail('TrajectoryMap')
                 vaccinesTransported += 1
                 
             #sys.exit()

@@ -74,7 +74,7 @@ class Controls:
         self.isUltraEnabled = status
 
     def IMUReading(self, _):
-        ser = serial.Serial('/dev/ttyUSB0', 9600)
+        ser = serial.Serial('/dev/ttyUSB0', 115200)
         
         count = 0
         try:
